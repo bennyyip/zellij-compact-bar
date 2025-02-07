@@ -1,0 +1,12 @@
+[package]
+name = "compact-bar"
+version = "0.1.0"
+authors = ["Ben Yip <yebenmy@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+zellij-tile = "0.41.2"
+colored = "2"
+ansi_term = "0.12"
+unicode-width = "0.1.8"
+zellij-tile-utils = "0.41.2"
