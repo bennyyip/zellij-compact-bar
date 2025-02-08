@@ -324,13 +324,14 @@ fn swap_layout_status(
     is_swap_layout_damaged: bool,
     input_mode: InputMode,
     palette: &Palette,
-    separator: &str,
+    _separator: &str,
 ) -> Option<LinePart> {
     match swap_layout_name {
         Some(swap_layout_name) => {
             let mut swap_layout_name = format!(" {} ", swap_layout_name);
             swap_layout_name.make_ascii_uppercase();
-            let swap_layout_name_len = swap_layout_name.len() + 3;
+            let separator = "";
+            let swap_layout_name_len = swap_layout_name.len();
 
             let (prefix_separator, swap_layout_name, suffix_separator) =
                 if input_mode == InputMode::Locked {

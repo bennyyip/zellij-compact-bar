@@ -136,7 +136,7 @@ impl ZellijPlugin for State {
             self.mode_info.session_name.as_deref(),
             all_tabs,
             active_tab_index,
-            cols.saturating_sub(1),
+            cols,
             self.mode_info.style.colors,
             self.mode_info.capabilities,
             self.mode_info.style.hide_session_name,
