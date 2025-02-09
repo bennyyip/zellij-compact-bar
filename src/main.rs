@@ -43,8 +43,10 @@ impl ZellijPlugin for State {
             EventType::ModeUpdate,
             EventType::Mouse,
             EventType::PermissionRequestResult,
+            EventType::Timer,
         ]);
         self.got_permissions = false;
+        set_timeout(1.0);
     }
 
     fn update(&mut self, event: Event) -> bool {
@@ -94,6 +96,10 @@ impl ZellijPlugin for State {
                 }
                 _ => {}
             },
+            Event::Timer(_) => {
+                set_timeout(0.5);
+                should_render = true;
+            }
             _ => {
                 eprintln!("Got unrecognized event: {:?}", event);
             }
