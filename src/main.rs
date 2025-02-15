@@ -31,6 +31,20 @@ static ARROW_SEPARATOR: &str = "";
 
 register_plugin!(State);
 
+fn wait_for_whole_seconds() {
+    use std::time::{Duration, SystemTime};
+
+    let secs = 1;
+    let dur = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap();
+    let mut to_wait = Duration::from_secs(1) - Duration::from_nanos(u64::from(dur.subsec_nanos()));
+    if secs > 1 {
+        to_wait += Duration::from_secs(secs - dur.as_secs() % secs)
+    }
+    set_timeout(to_wait.as_secs_f64());
+}
+
 impl ZellijPlugin for State {
     fn load(&mut self, _configuration: BTreeMap<String, String>) {
         request_permission(&[
@@ -46,7 +60,7 @@ impl ZellijPlugin for State {
             EventType::Timer,
         ]);
         self.got_permissions = false;
-        set_timeout(1.0);
+        wait_for_whole_seconds();
     }
 
     fn update(&mut self, event: Event) -> bool {
@@ -97,7 +111,7 @@ impl ZellijPlugin for State {
                 _ => {}
             },
             Event::Timer(_) => {
-                set_timeout(0.5);
+                wait_for_whole_seconds();
                 should_render = true;
             }
             _ => {
@@ -111,6 +125,7 @@ impl ZellijPlugin for State {
         if self.tabs.is_empty() {
             return;
         }
+        // wait_for_whole_seconds(10);
         let mut all_tabs: Vec<LinePart> = vec![];
         let mut active_tab_index = 0;
         let mut active_swap_layout_name = None;
