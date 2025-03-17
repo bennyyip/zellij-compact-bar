@@ -1,6 +1,8 @@
 use ansi_term::ANSIStrings;
-use chrono::{Local, Locale};
+use chrono::Local;
+use chrono::Locale;
 use chrono_tz::Tz;
+use std::fs;
 use unicode_width::UnicodeWidthStr;
 
 use crate::{LinePart, ARROW_SEPARATOR};
@@ -18,7 +20,7 @@ fn populate_tabs_in_tab_line(
     tabs_after_active: &mut Vec<LinePart>,
     tabs_to_render: &mut Vec<LinePart>,
     cols: usize,
-    palette: Palette,
+    palette: Styling,
     capabilities: PluginCapabilities,
 ) {
     let mut middle_size = get_current_title_len(tabs_to_render);
@@ -109,7 +111,7 @@ fn populate_tabs_in_tab_line(
 
 fn left_more_message(
     tab_count_to_the_left: usize,
-    palette: Palette,
+    palette: Styling,
     separator: &str,
     tab_index: usize,
 ) -> LinePart {
@@ -124,13 +126,14 @@ fn left_more_message(
     // 238
     // chars length plus separator length on both sides
     let more_text_len = more_text.width() + 2 * separator.width();
-    let (text_color, sep_color) = match palette.theme_hue {
-        ThemeHue::Dark => (palette.white, palette.black),
-        ThemeHue::Light => (palette.black, palette.white),
-    };
-    let left_separator = style!(sep_color, palette.orange).paint(separator);
-    let more_styled_text = style!(text_color, palette.orange).bold().paint(more_text);
-    let right_separator = style!(palette.orange, sep_color).paint(separator);
+    let (text_color, sep_color) = (
+        palette.ribbon_unselected.base,
+        palette.text_unselected.background,
+    );
+    let plus_ribbon_bg = palette.text_selected.emphasis_0;
+    let left_separator = style!(sep_color, plus_ribbon_bg).paint(separator);
+    let more_styled_text = style!(text_color, plus_ribbon_bg).bold().paint(more_text);
+    let right_separator = style!(plus_ribbon_bg, sep_color).paint(separator);
     let more_styled_text =
         ANSIStrings(&[left_separator, more_styled_text, right_separator]).to_string();
     LinePart {
@@ -142,7 +145,7 @@ fn left_more_message(
 
 fn right_more_message(
     tab_count_to_the_right: usize,
-    palette: Palette,
+    palette: Styling,
     separator: &str,
     tab_index: usize,
 ) -> LinePart {
@@ -156,13 +159,15 @@ fn right_more_message(
     };
     // chars length plus separator length on both sides
     let more_text_len = more_text.width() + 2 * separator.width();
-    let (text_color, sep_color) = match palette.theme_hue {
-        ThemeHue::Dark => (palette.white, palette.black),
-        ThemeHue::Light => (palette.black, palette.white),
-    };
-    let left_separator = style!(sep_color, palette.orange).paint(separator);
-    let more_styled_text = style!(text_color, palette.orange).bold().paint(more_text);
-    let right_separator = style!(palette.orange, sep_color).paint(separator);
+
+    let (text_color, sep_color) = (
+        palette.ribbon_unselected.base,
+        palette.text_unselected.background,
+    );
+    let plus_ribbon_bg = palette.text_selected.emphasis_0;
+    let left_separator = style!(sep_color, plus_ribbon_bg).paint(separator);
+    let more_styled_text = style!(text_color, plus_ribbon_bg).bold().paint(more_text);
+    let right_separator = style!(plus_ribbon_bg, sep_color).paint(separator);
     let more_styled_text =
         ANSIStrings(&[left_separator, more_styled_text, right_separator]).to_string();
     LinePart {
@@ -175,24 +180,17 @@ fn right_more_message(
 fn tab_line_prefix(
     session_name: Option<&str>,
     mode: InputMode,
-    palette: Palette,
+    palette: Styling,
     cols: usize,
 ) -> Vec<LinePart> {
     let prefix_text = "".to_string();
 
     let prefix_text_len = prefix_text.chars().count();
-    let text_color = match palette.theme_hue {
-        ThemeHue::Dark => palette.white,
-        ThemeHue::Light => palette.black,
-    };
-    let bg_color = match palette.theme_hue {
-        ThemeHue::Dark => palette.black,
-        ThemeHue::Light => palette.white,
-    };
-
-    let locked_mode_color = palette.magenta;
-    let normal_mode_color = palette.green;
-    let other_modes_color = palette.orange;
+    let text_color = palette.text_unselected.base;
+    let bg_color = palette.text_unselected.background;
+    let locked_mode_color = palette.text_unselected.emphasis_3;
+    let normal_mode_color = palette.text_unselected.emphasis_2;
+    let other_modes_color = palette.text_unselected.emphasis_0;
 
     let prefix_styled_text = style!(text_color, bg_color).bold().paint(prefix_text);
     let mut parts = vec![LinePart {
@@ -203,10 +201,6 @@ fn tab_line_prefix(
     if let Some(name) = session_name {
         let name_part = format!("({})", name);
         let name_part_len = name_part.width();
-        let text_color = match palette.theme_hue {
-            ThemeHue::Dark => palette.white,
-            ThemeHue::Light => palette.black,
-        };
         let name_part_styled_text = style!(text_color, bg_color).bold().paint(name_part);
         if cols.saturating_sub(prefix_text_len) >= name_part_len {
             parts.push(LinePart {
@@ -255,7 +249,7 @@ pub fn tab_line(
     mut all_tabs: Vec<LinePart>,
     active_tab_index: usize,
     cols: usize,
-    palette: Palette,
+    palette: Styling,
     capabilities: PluginCapabilities,
     hide_session_name: bool,
     mode: InputMode,
@@ -296,10 +290,17 @@ pub fn tab_line(
 
     let mut right_parts = vec![];
     let mut remaining_space = cols - current_title_len;
-    let time_status = time_status(&palette, tab_separator(capabilities));
+    let separator = tab_separator(capabilities);
+    let time_status = time_status(palette, &separator);
     if remaining_space >= time_status.len {
         remaining_space -= time_status.len;
         right_parts.push(time_status);
+    }
+
+    let load_status = load_status(palette, &separator);
+    if remaining_space >= load_status.len {
+        remaining_space -= load_status.len;
+        right_parts.push(load_status);
     }
 
     if remaining_space > 0 {
@@ -309,7 +310,7 @@ pub fn tab_line(
             is_swap_layout_dirty,
             mode,
             &palette,
-            tab_separator(capabilities),
+            &separator,
         ) {
             remaining_space -= swap_layout_status.len;
             right_parts.push(swap_layout_status);
@@ -317,8 +318,10 @@ pub fn tab_line(
     }
 
     let mut buffer = String::new();
+    let bg = palette.text_unselected.background;
+
     for _ in 0..remaining_space {
-        buffer.push_str(&style!(palette.black, palette.black).paint(" ").to_string());
+        buffer.push_str(&style!(bg, bg).paint(" ").to_string());
     }
     prefix.push(LinePart {
         part: buffer,
@@ -338,38 +341,35 @@ fn swap_layout_status(
     swap_layout_name: &Option<String>,
     is_swap_layout_damaged: bool,
     input_mode: InputMode,
-    palette: &Palette,
+    palette: &Styling,
     separator: &str,
 ) -> Option<LinePart> {
     match swap_layout_name {
         Some(swap_layout_name) => {
             let mut swap_layout_name = format!(" {} ", swap_layout_name);
             swap_layout_name.make_ascii_uppercase();
+            let bg = palette.text_unselected.background;
+            let fg = palette.ribbon_unselected.background;
+            let green = palette.ribbon_selected.background;
 
             let (prefix_separator, swap_layout_name, suffix_separator) =
                 if input_mode == InputMode::Locked {
                     (
-                        style!(palette.black, palette.fg).paint(separator),
-                        style!(palette.black, palette.fg)
-                            .italic()
-                            .paint(&swap_layout_name),
-                        style!(palette.fg, palette.black).paint(separator),
+                        style!(bg, fg).paint(separator),
+                        style!(bg, fg).italic().paint(&swap_layout_name),
+                        style!(fg, bg).paint(separator),
                     )
                 } else if is_swap_layout_damaged {
                     (
-                        style!(palette.black, palette.fg).paint(separator),
-                        style!(palette.black, palette.fg)
-                            .bold()
-                            .paint(&swap_layout_name),
-                        style!(palette.fg, palette.black).paint(separator),
+                        style!(bg, fg).paint(separator),
+                        style!(bg, fg).bold().paint(&swap_layout_name),
+                        style!(fg, bg).paint(separator),
                     )
                 } else {
                     (
-                        style!(palette.black, palette.green).paint(separator),
-                        style!(palette.black, palette.green)
-                            .bold()
-                            .paint(&swap_layout_name),
-                        style!(palette.green, palette.black).paint(separator),
+                        style!(bg, green).paint(separator),
+                        style!(bg, green).bold().paint(&swap_layout_name),
+                        style!(green, bg).paint(separator),
                     )
                 };
             let swap_layout_indicator = format!(
@@ -399,7 +399,7 @@ fn swap_layout_status(
     }
 }
 
-fn time_status(palette: &Palette, separator: &str) -> LinePart {
+fn time_status(palette: Styling, separator: &str) -> LinePart {
     let time = Local::now()
         .with_timezone(&Tz::Asia__Hong_Kong)
         .format_localized(" %H:%M:%S %A ", Locale::ja_JP)
@@ -408,8 +408,50 @@ fn time_status(palette: &Palette, separator: &str) -> LinePart {
     let part = format!("{}{}", separator, time.to_string());
     let len = part.width();
 
-    let part = style!(palette.black, palette.green).paint(part).to_string();
+    let bg = palette.text_unselected.background;
+    let green = palette.ribbon_selected.background;
+    let part = style!(bg, green).paint(part).to_string();
 
+    LinePart {
+        part,
+        len,
+        tab_index: None,
+    }
+}
+
+fn load_status(styling: Styling, separator: &str) -> LinePart {
+    let load_string = fs::read_to_string("/host/loadavg").unwrap();
+    let mut split = load_string.split(' ');
+    let load1 = split.next().unwrap();
+    let load5 = split.next().unwrap();
+    let load15 = split.next().unwrap();
+    let ncpu = num_cpus::get(); // TODO cache value
+
+    let bg = styling.text_unselected.background;
+    let palette: Palette = styling.into();
+
+    let load: f32 = load1.parse().unwrap();
+    let color = match (load / ncpu as f32 * 100.0).round() as u32 {
+        0..25 => palette.green,
+        25..50 => palette.white,
+        50..75 => palette.blue,
+        75..100 => palette.cyan,
+        100..200 => palette.yellow,
+        200..400 => palette.magenta,
+        400.. => palette.red,
+    };
+
+    let loads = format!(" {} {} {} ", load1, load5, load15);
+    let part = format!("{}{}{}", separator, loads, separator);
+    let len = part.width();
+    let part = format!(
+        "{}{}{}",
+        style!(bg, color).paint(separator),
+        style!(bg, color).paint(loads),
+        style!(color, bg).paint(separator)
+    );
+
+    let part = style!(bg, color).paint(part).to_string();
     LinePart {
         part,
         len,

@@ -1,5 +1,6 @@
 mod line;
 mod tab;
+use std::path::PathBuf;
 
 use std::cmp::{max, min};
 use std::collections::BTreeMap;
@@ -50,6 +51,7 @@ impl ZellijPlugin for State {
         request_permission(&[
             PermissionType::ReadApplicationState,
             PermissionType::ChangeApplicationState,
+            PermissionType::FullHdAccess,
         ]);
         set_selectable(false);
         subscribe(&[
@@ -69,6 +71,9 @@ impl ZellijPlugin for State {
             return match event {
                 Event::PermissionRequestResult(PermissionStatus::Granted) => {
                     self.got_permissions = true;
+                    let new_host_folder = PathBuf::from("/proc");
+                    change_host_folder(new_host_folder);
+
                     true
                 }
                 _ => should_render,
@@ -169,10 +174,7 @@ impl ZellijPlugin for State {
             .tab_line
             .iter()
             .fold(String::new(), |output, part| output + &part.part);
-        let background = match self.mode_info.style.colors.theme_hue {
-            ThemeHue::Dark => self.mode_info.style.colors.black,
-            ThemeHue::Light => self.mode_info.style.colors.white,
-        };
+        let background = self.mode_info.style.colors.text_unselected.background;
         match background {
             PaletteColor::Rgb((r, g, b)) => {
                 print!("{}\u{1b}[48;2;{};{};{}m\u{1b}[0K", output, r, g, b);

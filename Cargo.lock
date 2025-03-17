@@ -503,6 +503,7 @@ dependencies = [
  "chrono",
  "chrono-tz",
  "colored",
+ "num_cpus",
  "unicode-width",
  "zellij-tile",
  "zellij-tile-utils",
@@ -1096,6 +1097,12 @@ checksum = "62b467343b94ba476dcb2500d242dadbb39557df889310ac77c5d99100aaac33"
 dependencies = [
  "libc",
 ]
+
+[[package]]
+name = "hermit-abi"
+version = "0.3.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d231dfb89cfffdbc30e7fc41579ed6066ad03abda9e567ccafae602b97ec5024"
 
 [[package]]
 name = "hermit-abi"
@@ -1836,6 +1843,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "071dfc062690e90b734c0b2273ce72ad0ffa95f0c74596bc250dcfd960262841"
 dependencies = [
  "autocfg",
+]
+
+[[package]]
+name = "num_cpus"
+version = "1.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4161fcb6d602d4d2081af7c3a45852d875a03dd337a6bfdd6e06407b61342a43"
+dependencies = [
+ "hermit-abi 0.3.9",
+ "libc",
 ]
 
 [[package]]
@@ -3531,9 +3548,9 @@ dependencies = [
 
 [[package]]
 name = "zellij-tile"
-version = "0.41.2"
+version = "0.42.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "00d9fa972c8b045359a1451ec55ee77906d6231592ef8cdb0a3f275972b21b96"
+checksum = "c216034a5e2fee07e53672d7b96967b8b58d197e295466341c8d13ba93da4441"
 dependencies = [
  "clap",
  "serde",
@@ -3545,18 +3562,18 @@ dependencies = [
 
 [[package]]
 name = "zellij-tile-utils"
-version = "0.41.2"
+version = "0.42.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d0bd08b9f8ba4247308409ecd31b820694b5f4aab1838674be52546586269478"
+checksum = "936238a00df58065a664996fc6ce47c5afe6d170679367f56da700d2d595aafd"
 dependencies = [
  "ansi_term",
 ]
 
 [[package]]
 name = "zellij-utils"
-version = "0.41.2"
+version = "0.42.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0a791fae542909bccb8f8d8fcf521cfbe0af2c196526f2acbe67f4d7a5db6978"
+checksum = "43cd61f2e6f66ac10b94ea296e7ae750769dfd795766f7986bb33248832faec8"
 dependencies = [
  "anyhow",
  "async-channel 1.9.0",
