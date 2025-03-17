@@ -1,3 +1,5 @@
+A modified version of the official compact bar.
+
 1. static ARROW_SEPARATOR: &str = "";
 2. remove prefix 'Zellij'
 3. layout indicator with no separator
