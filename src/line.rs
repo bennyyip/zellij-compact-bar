@@ -2,7 +2,6 @@ use ansi_term::ANSIStrings;
 use chrono::Local;
 use chrono::Locale;
 use chrono_tz::Tz;
-use std::fs;
 use unicode_width::UnicodeWidthStr;
 
 use crate::{LinePart, ARROW_SEPARATOR};
@@ -297,12 +296,6 @@ pub fn tab_line(
         right_parts.push(time_status);
     }
 
-    let load_status = load_status(palette, &separator);
-    if remaining_space >= load_status.len {
-        remaining_space -= load_status.len;
-        right_parts.push(load_status);
-    }
-
     if remaining_space > 0 {
         if let Some(swap_layout_status) = swap_layout_status(
             remaining_space,
@@ -419,42 +412,3 @@ fn time_status(palette: Styling, separator: &str) -> LinePart {
     }
 }
 
-fn load_status(styling: Styling, separator: &str) -> LinePart {
-    let load_string = fs::read_to_string("/host/loadavg").unwrap();
-    let mut split = load_string.split(' ');
-    let load1 = split.next().unwrap();
-    let load5 = split.next().unwrap();
-    let load15 = split.next().unwrap();
-    let ncpu = num_cpus::get(); // TODO cache value
-
-    let bg = styling.text_unselected.background;
-    let palette: Palette = styling.into();
-
-    let load: f32 = load1.parse().unwrap();
-    let color = match (load / ncpu as f32 * 100.0).round() as u32 {
-        0..25 => palette.green,
-        25..50 => palette.white,
-        50..75 => palette.blue,
-        75..100 => palette.cyan,
-        100..200 => palette.yellow,
-        200..400 => palette.magenta,
-        400.. => palette.red,
-    };
-
-    let loads = format!(" {} {} {} ", load1, load5, load15);
-    let part = format!("{}{}{}", separator, loads, separator);
-    let len = part.width();
-    let part = format!(
-        "{}{}{}",
-        style!(bg, color).paint(separator),
-        style!(bg, color).paint(loads),
-        style!(color, bg).paint(separator)
-    );
-
-    let part = style!(bg, color).paint(part).to_string();
-    LinePart {
-        part,
-        len,
-        tab_index: None,
-    }
-}

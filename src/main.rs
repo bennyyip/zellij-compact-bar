@@ -1,6 +1,5 @@
 mod line;
 mod tab;
-use std::path::PathBuf;
 
 use std::cmp::{max, min};
 use std::collections::BTreeMap;
@@ -32,26 +31,11 @@ static ARROW_SEPARATOR: &str = "";
 
 register_plugin!(State);
 
-fn wait_for_whole_seconds() {
-    use std::time::{Duration, SystemTime};
-
-    let secs = 1;
-    let dur = SystemTime::now()
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .unwrap();
-    let mut to_wait = Duration::from_secs(1) - Duration::from_nanos(u64::from(dur.subsec_nanos()));
-    if secs > 1 {
-        to_wait += Duration::from_secs(secs - dur.as_secs() % secs)
-    }
-    set_timeout(to_wait.as_secs_f64());
-}
-
 impl ZellijPlugin for State {
     fn load(&mut self, _configuration: BTreeMap<String, String>) {
         request_permission(&[
             PermissionType::ReadApplicationState,
             PermissionType::ChangeApplicationState,
-            PermissionType::FullHdAccess,
         ]);
         set_selectable(false);
         subscribe(&[
@@ -62,7 +46,7 @@ impl ZellijPlugin for State {
             EventType::Timer,
         ]);
         self.got_permissions = false;
-        wait_for_whole_seconds();
+        set_timeout(1.0);
     }
 
     fn update(&mut self, event: Event) -> bool {
@@ -71,9 +55,6 @@ impl ZellijPlugin for State {
             return match event {
                 Event::PermissionRequestResult(PermissionStatus::Granted) => {
                     self.got_permissions = true;
-                    let new_host_folder = PathBuf::from("/proc");
-                    change_host_folder(new_host_folder);
-
                     true
                 }
                 _ => should_render,
@@ -116,7 +97,7 @@ impl ZellijPlugin for State {
                 _ => {}
             },
             Event::Timer(_) => {
-                wait_for_whole_seconds();
+                set_timeout(0.5);
                 should_render = true;
             }
             _ => {
@@ -130,7 +111,6 @@ impl ZellijPlugin for State {
         if self.tabs.is_empty() {
             return;
         }
-        // wait_for_whole_seconds(10);
         let mut all_tabs: Vec<LinePart> = vec![];
         let mut active_tab_index = 0;
         let mut active_swap_layout_name = None;
