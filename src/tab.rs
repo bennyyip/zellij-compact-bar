@@ -32,11 +32,11 @@ pub fn render_tab(
         palette.ribbon_unselected.background
     };
     let background_color = if tab.active {
-        palette.ribbon_selected.background
+        palette.ribbon_unselected.background
     } else if is_alternate_tab {
         alternate_tab_color
     } else {
-        palette.ribbon_unselected.background
+        palette.ribbon_selected.background
     };
     let foreground_color = if tab.active {
         palette.ribbon_selected.base
